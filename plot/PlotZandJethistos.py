@@ -47,15 +47,15 @@ massnames = ['reco', 'fake', 'miss', 'gen']
 znames = ['zpt', 'zeta', 'zphi', 'zmass']
 
 titles = [
-#['h_reco' , 'Reconstructed AK8 SD Jet Mass (GeV)'],
-#['h_reco_2d' , 'Reconstructed AK8 SD Jet Mass (GeV)'],
-#['h_reco_u' , 'Reconstructed AK8 Ungroomed Jet Mass (GeV)'],
-#['h_gen' , 'Generated AK8 SD Jet Mass (GeV)'],
-#['h_gen_u' , 'Generated AK8 Ungroomed Jet Mass (GeV)'],
+['h_reco' , 'Reconstructed AK8 SD Jet Mass (GeV)'],
+['h_reco_2d' , 'Reconstructed AK8 SD Jet Mass (GeV)'],
+['h_reco_u' , 'Reconstructed AK8 Ungroomed Jet Mass (GeV)'],
+['h_gen' , 'Generated AK8 SD Jet Mass (GeV)'],
+['h_gen_u' , 'Generated AK8 Ungroomed Jet Mass (GeV)'],
 ['h_fake' , 'Reconstructed  Fake AK8 SD Jet Mass (GeV)'],
 ['h_fake_u' , 'Reconstructed Fake AK8 Ungroomed Jet Mass (GeV)'],
-#['h_miss' , 'Missed Generated AK8 SD Jet Mass (GeV)'],
-#['h_miss_u' , 'Missed Generated AK8 Ungroomed Jet Mass (GeV)'],
+['h_miss' , 'Missed Generated AK8 SD Jet Mass (GeV)'],
+['h_miss_u' , 'Missed Generated AK8 Ungroomed Jet Mass (GeV)'],
 ['h_lep0pt' , 'Lepton 0 P_{T} (GeV)'],
 ['h_lep0eta' , 'Lepton 0 \eta'],
 ['h_lep0ephi' , 'Lepton 0 \phi'],
@@ -69,20 +69,20 @@ titles = [
 ['zeta' , 'Leptonic Z candidate \eta '],
 ['zphi' , 'Leptonic Z candidate \phi '],
 
-#['h_genjetpt' , 'Generated AK8 SD Jet $P_{T}$ (GeV)'],
-#['h_genjetphi' , 'Generated AK8 SD Jet \phi (GeV)'],
-#['h_genjeteta' , 'Generated AK8 SD Jet \eta (GeV)'],
-#['h_genjetmass' , 'Generated AK8 SD Jet Mass (GeV)'],
+['h_genjetpt' , 'Generated AK8 SD Jet $P_{T}$ (GeV)'],
+['h_genjetphi' , 'Generated AK8 SD Jet \phi (GeV)'],
+['h_genjeteta' , 'Generated AK8 SD Jet \eta (GeV)'],
+['h_genjetmass' , 'Generated AK8 SD Jet Mass (GeV)'],
 
 
-#['recojetpt' , 'Reconstructed AK8 SD Jet $P_{T}$ (GeV)'],
-#['h_recojetphi' , 'Reconstructed  AK8 SD Jet \phi (GeV)'],
-#['h_recojeteta' , 'Reconstructed  AK8 SD Jet \eta (GeV)'],
-#['h_recojetmass' , 'Reconstructed  AK8 SD Jet Mass (GeV)'],
+['recojetpt' , 'Reconstructed AK8 SD Jet $P_{T}$ (GeV)'],
+['h_recojetphi' , 'Reconstructed  AK8 SD Jet \phi (GeV)'],
+['h_recojeteta' , 'Reconstructed  AK8 SD Jet \eta (GeV)'],
+['h_recojetmass' , 'Reconstructed  AK8 SD Jet Mass (GeV)'],
 
 
-#['drGenReco' , ' \Delta R(genJet,recoJet) '],
-#['drGenGroomed' , ' \Delta R(genJet,recoSDJet) ']
+['drGenReco' , ' \Delta R(genJet,recoJet) '],
+['drGenGroomed' , ' \Delta R(genJet,recoSDJet) ']
 
 ]
 
