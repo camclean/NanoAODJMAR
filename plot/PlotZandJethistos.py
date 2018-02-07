@@ -100,12 +100,12 @@ for k1 in dirList:
     hname =  h.ReadObj().GetName()
     if 'response' in hname : continue
     if 'inning' in hname : continue  
-    if '_2d' in hname : continue
-    if 'jet' in hname : continue
-    if 'drGen' in hname : continue
-    if 'reco' in hname : continue
-    if 'gen' in hname : continue
-    if 'miss' in hname : continue
+    #if '_2d' in hname : continue
+    #if 'jet' in hname : continue
+    #if 'drGen' in hname : continue
+    #if 'reco' in hname : continue
+    #if 'gen' in hname : continue
+    #if 'fake' in hname : continue
     print "hist name is "
     print hname
     for t in titles :
