@@ -103,7 +103,7 @@ def main():
         config.Data.inputDataset = job
 
         if datatier == "USER":
-            requestname = 'ZandJetSkim_NANAODrecluster_' + ptbin + '_' + cond
+            requestname = 'ZplusJetSelection_NANAODrecluster_' + ptbin + '_' + cond
             config.JobType.scriptExe = 'crab_script.sh' 
             config.JobType.inputFiles = [options.cfg ,'crab_script.sh', 'crab_script.py' ,'./haddnano.py', 'keep_and_drop.txt','/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PromptReco/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'] #hadd nano will not be needed once nano tools are in cmssw                                                                                      
             config.JobType.sendPythonFolder  = True
