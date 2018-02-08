@@ -426,8 +426,12 @@ class ZPlusJetsXS_2D(Module):
                                 self.printP4(gen), genSD.M() )
 
                 else :
-                # Here we have a groomed det, but no groomed gen. Groomed fake. 
+                    self.h_fake_u.Fill(reco.p4().M())
+                    binNumberBkgu=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), reco.p4().M() )
+                    self.h_fake_2d_u.Fill( binNumberBkgu )
+                    # Here we have a groomed det, but no groomed gen. Groomed fake. 
                     if genSDVal == None and recoSD != None :
+                        self.h_fake.Fill(recoSD.M())
                         binNumberBkg=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), recoSD.M() )
                         #self.h_gen_2d.Fill( binNumberBkg ) Seems wrong ???
                         self.h_fake_2d.Fill( binNumberBkg )
