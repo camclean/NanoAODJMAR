@@ -11,7 +11,7 @@ import array
 class ZPlusJetsXS_2D(Module):
     def __init__(self ):
         self.writeHistFile = True
-        self.verbose = True #False
+        self.verbose = False
     def beginJob(self, histFile, histDirName):
         Module.beginJob(self, histFile, histDirName)
         self.ptbinsGen = array.array('d', [  200., 260., 350., 460., 550., 650., 760., 900., 1000., 1100., 1200., 1300., 13000.])
@@ -197,7 +197,8 @@ class ZPlusJetsXS_2D(Module):
         isMC = event.run == 1
         if self.verbose:
             print '------------------------ ', event.event
-        genjets = None
+        genjets = []
+        #print "len(genjets) = {}".format(len(genjets))
         if isMC:
             goodgen= False
             ###### Get gen Z candidate ######
@@ -230,7 +231,7 @@ class ZPlusJetsXS_2D(Module):
                     print 'all genjets:'
                     self.printCollection( allgenjets )
                 # List of gen jets:
-                genjets = [ x for x in allgenjets if x.p4().Perp() > self.minJetPt * 0.8 ]#and x.p4().DeltaPhi( Zboson ) > self.minDPhiZJet  ]
+                genjets = [ x for x in allgenjets if x.p4().Perp() > self.minJetPt * 0.8 and x.p4().DeltaPhi( Zboson ) > self.minDPhiZJet  ]
                 # List of gen subjets (no direct link from Genjet):
                 gensubjets = list(Collection(event, "SubGenJetAK8"))
                 # Dictionary to hold ungroomed-->groomed for gen
@@ -239,7 +240,7 @@ class ZPlusJetsXS_2D(Module):
                 for igen,gen in enumerate(genjets):
                     gensubjetsMatched = self.getSubjets( p4=gen.p4(),subjets=gensubjets, dRmax=0.8)
                     for isub,sub in enumerate(gensubjetsMatched) : 
-                        print "filling drGenGroomed"
+                        #print "filling drGenGroomed"
                         self.h_drGenGroomed.Fill( gen.p4().DeltaR( sub ) )
                     genjetsGroomed[gen] = sum( gensubjetsMatched, ROOT.TLorentzVector() ) if len(gensubjetsMatched) > 0 else None
                 
@@ -325,14 +326,14 @@ class ZPlusJetsXS_2D(Module):
         recojets.sort(key=lambda x:x.p4().Perp(),reverse=True)     
         if len(recojets) < 1 : return False
         #print "Event passed selection"
-        if isMC == False or  genjets == None:
-            genjets = [] 
+        if isMC == False :
+            genjets = [None]*len(recojets) 
         # List of reco subjets:
         recosubjets = list(Collection(event,"SubJet"))
         # Dictionary to hold reco--> gen matching
         #recoToGen =  None
-        #if genjets != None :
-        recoToGen = matchObjectCollection( recojets, genjets, dRmax=0.05 )
+        if goodgen :
+            recoToGen = matchObjectCollection( recojets, genjets, dRmax=0.05 )
         # Dictionary to hold ungroomed-->groomed for reco
         recojetsGroomed = {}        
         # Get the groomed reco jets
@@ -357,9 +358,11 @@ class ZPlusJetsXS_2D(Module):
         # If both reco+gen: "fill"
         # If only reco: "fake"
         # (See below for "misses")
-        if genjets == None:
+        if not goodgen :print "len(genjets) = {}".format(len(genjets)) 
+        if not goodgen or len(genjets) < 1 :
             # This is a fake if there are reco but no gen
             # This in 1D Ungroomed Fake
+            #print "filling ungroomed fakes"
             self.h_fake_u.Fill(recojets[0].p4().M())
 
             #2D fake
@@ -371,13 +374,14 @@ class ZPlusJetsXS_2D(Module):
                 self.h_fake.Fill(recojetsGroomed[recojets[0]].M() )
                 binNumberFakeg=self.backgroundDistribution.GetGlobalBinNumber( recojets[0].p4().Perp(), recojetsGroomed[recojets[0]].M()  )
                 self.h_fake_2d.Fill( binNumberFakeg )
-            #return True
+            return True
+        #print recoToGen
         for reco,gen in recoToGen.iteritems():
             recoSD = recojetsGroomed[reco]
             if reco == None :
                 continue
             # Always fill the ungroomed det    
-            print "filling recojet kinematics"
+            #print "filling recojet kinematics"
             self.h_reco_u.Fill( reco.p4().M() )    
             self.h_recojetpt.Fill(   reco.p4().Perp() )
             self.h_recojeteta.Fill(  reco.p4().Eta()  )
@@ -426,6 +430,7 @@ class ZPlusJetsXS_2D(Module):
                                 self.printP4(gen), genSD.M() )
 
                 else :
+                    print "filling ungroomed fakes"
                     self.h_fake_u.Fill(reco.p4().M())
                     binNumberBkgu=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), reco.p4().M() )
                     self.h_fake_2d_u.Fill( binNumberBkgu )
