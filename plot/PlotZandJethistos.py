@@ -39,7 +39,7 @@ if not options.MC :
         dhists[h.GetName()] = h
 
 
-mcFile = ROOT.TFile("./ZandJetSkimofNANAODreclusterDY1JetsToLLM-50-histos.root")
+mcFile = ROOT.TFile("./ZandJetSkimofNANAODreclusterDY1JetsToLLM-50-histos-all.root")
 
 #get histos to plot
 mhists = {}
@@ -180,6 +180,6 @@ if options.MC :
         #    rangexs = [-5,5]
 
         #print "Now plotting histogram {} with x range {}".format(name, rangexs)
-        newcan = printPlot("94XNANOrecluster_ZplusJetSkim", "zjetsplots", xtitle, name ,rangexs, y_max_scale, data , hist[0], Stack ) 
+        newcan = printPlot("94XNANOrecluster_ZplusJetSkim_allDY2017", "zjetsplots", xtitle, name ,rangexs, y_max_scale, data , hist[0], Stack ) 
         cans.append(newcan)
 
