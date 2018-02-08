@@ -1,6 +1,6 @@
 import ROOT
 
-f = ROOT.TFile("zplusjetsxs_hists.root")
+f = ROOT.TFile("../plot/ZandJetSkimofNANAODreclusterDY1JetsToLLM-50-histos-all.root")
 
 isGroomed = False
 if not isGroomed :
