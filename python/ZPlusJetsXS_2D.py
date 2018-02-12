@@ -172,6 +172,8 @@ class ZPlusJetsXS_2D(Module):
         self.out.branch("gen",  "I")
         self.out.branch("reco",  "I")
         self.out.branch("response",  "I")
+        self.out.branch("goodgen",  "I")
+        self.out.branch("goodreco",  "I") 
         pass
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -385,13 +387,18 @@ class ZPlusJetsXS_2D(Module):
         miss = False
         #if event has neither goodgen or goodreco we do not want it 
         if not goodgen and not goodreco : 
+            self.out.fillBranch("goodreco",  0)
+            self.out.fillBranch("goodgen",  0)    
             return False
+       
         # reco but no gen is a fake
         elif goodreco and not goodgen :
             #print "filling Ungroomed histos---------"
             #Fakes 
             #print "filling Ungroomed histos- RECO"
-            #Always fill the reco when filling fakes bc in data you cannot distinguish                                                                                                                          
+            #Always fill the reco when filling fakes bc in data you cannot distinguish                                                                                                                      
+            self.out.fillBranch("goodreco",  1)
+            self.out.fillBranch("goodgen",  0)                
             #1D
             self.h_reco_u.Fill( reco.p4().M() )
             #2D
@@ -402,6 +409,7 @@ class ZPlusJetsXS_2D(Module):
             #Use branches for groomed filling in later script
             self.out.fillBranch("reco",  1)
             self.out.fillBranch("fake",  1)
+            #self.out.fillBranch("response",  1)
             #fill the fakes 
             # 1D                                                                                                                                                                         
             #print "filling Ungroomed histos FAKE 0 "
@@ -418,7 +426,9 @@ class ZPlusJetsXS_2D(Module):
                 self.h_fake_2d.Fill( binNumberFakeg )
             return True
         elif goodreco and goodgen :
-            #print "filling Ungroomed histos---------"
+            self.out.fillBranch("goodreco",  1)
+            self.out.fillBranch("goodgen",  1)
+            #Print- "filling Ungroomed histos---------"
             for reco,gen in recoToGen.iteritems():
                 recoSD = recojetsGroomed[reco]
                 if reco == None :
@@ -426,6 +436,7 @@ class ZPlusJetsXS_2D(Module):
                     continue
                  
                 fill = True
+                self.out.fillBranch("reco",  1)
                 # Always fill the ungroomed det    
                 #print "filling recojet kinematics"
                 #print "filling Ungroomed histos- RECO"
@@ -450,6 +461,8 @@ class ZPlusJetsXS_2D(Module):
                 # Now check ungroomed gen
                 genSDVal = None
                 if gen != None:
+                    self.out.fillBranch("gen",  1)
+                    self.out.fillBranch("response",  1)
                     # 1d Ungroomed
                     #print "filling Ungroomed histos - GEN and RESPONSE"
                     self.h_response_u.Fill( reco.p4().M(), gen.p4().M() )
@@ -478,6 +491,7 @@ class ZPlusJetsXS_2D(Module):
                 else :
                     fake = True
                     fill = True
+                    self.out.fillBranch("fake",  1)
                     #print "filling Ungroomed histos FAKE 1"
                     self.h_fake_u.Fill(reco.p4().M())
                     binNumberBkgu=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), reco.p4().M() )
@@ -502,7 +516,8 @@ class ZPlusJetsXS_2D(Module):
                     self.h_response_u.Fill( -1.0, gen.p4().M() )
                     self.h_gen_u.Fill(gen.p4().M())
                     self.h_miss_u.Fill(gen.p4().M())
-                
+                               
+          
                     # 2D                                                                                                                                                               
                     binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )
                     self.h_response_2d_u.Fill( 0, binNumberGenu )
@@ -528,8 +543,12 @@ class ZPlusJetsXS_2D(Module):
             return True
 
         elif not goodreco and goodgen :
-
             if genjets[0] == None: return False
+            self.out.fillBranch("goodgen",  1)
+            self.out.fillBranch("goodreco", 0 )
+            self.out.fillBranch("miss",  1)
+            self.out.fillBranch("gen",  1)
+            self.out.fillBranch("response",  1)
             #print "filling Ungroomed histos---------"
             gen = genjets[0]
 
