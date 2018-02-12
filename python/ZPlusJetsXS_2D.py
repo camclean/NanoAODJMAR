@@ -167,7 +167,11 @@ class ZPlusJetsXS_2D(Module):
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
         self.out.branch("Zlep_isMu",  "I")
-
+        self.out.branch("fake",  "I")
+        self.out.branch("miss",  "I")
+        self.out.branch("gen",  "I")
+        self.out.branch("reco",  "I")
+        self.out.branch("response",  "I")
         pass
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -216,9 +220,9 @@ class ZPlusJetsXS_2D(Module):
                     print 'Gen leptons:'
                     self.printCollection( genleptons )
                 Zboson = genl.p4() + genleptons[il+1].p4()
-                if Zboson.Perp() < self.minZpt * 0.9 :
+                if Zboson.Perp() < self.minZpt * 0.5 :
                     continue
-                    #return False
+                #    #return False
                 goodgen = True
                 if self.verbose:
                     print '-----'
@@ -233,7 +237,8 @@ class ZPlusJetsXS_2D(Module):
                     print 'all genjets:'
                     self.printCollection( allgenjets )
                 # List of gen jets:
-                genjets = [ x for x in allgenjets if x.p4().Perp() > self.minJetPt * 0.8 and x.p4().DeltaPhi( Zboson ) > self.minDPhiZJet  ]
+                genjets = [ x for x in allgenjets if x.p4().Perp() > self.minJetPt * 0.5 and x.p4().DeltaPhi( Zboson ) > self.minDPhiZJet * 0.5 ]
+                if len(genjets) < 1 : goodgen = False
                 # List of gen subjets (no direct link from Genjet):
                 gensubjets = list(Collection(event, "SubGenJetAK8"))
                 # Dictionary to hold ungroomed-->groomed for gen
@@ -254,7 +259,9 @@ class ZPlusJetsXS_2D(Module):
                         print '         : %s %6.2f' % ( self.printP4(genjet), sdmassgen )            
             
 
-            
+        goodreco = False    
+        goodrecolep = False
+        goodrecoZ = False
         ###### Get reco Z candidate #######
         # List of reco muons
         allmuons = Collection(event, "Muon")
@@ -268,9 +275,12 @@ class ZPlusJetsXS_2D(Module):
 
 
         if len(muons) < 2 and len(electrons) < 2:
-            return False
+            goodrecolep = False
+        else : goodrecolep = True
+        #return False
         lep0 = None
-        lep1 = None 
+        lep1 = None
+        Zcand = None 
         Zismu = -1   
         if len(muons) >= 2 and len(electrons) < 2:           
             Zcand = muons[0].p4() + muons[1].p4()
@@ -295,22 +305,28 @@ class ZPlusJetsXS_2D(Module):
                 lep1 = electrons[1].p4()
                 Zismu = 0                
 
-        if Zcand.Perp() < self.minZpt or Zcand.M() < self.minZmass or Zcand.M() > self.maxZmass :
-            return False
+        if  Zcand == None :
+            goodrecoZ = False
+        elif Zcand.Perp() < self.minZpt or Zcand.M() < self.minZmass or Zcand.M() > self.maxZmass :
+            goodrecoZ = False #return False
+        else : 
+            goodrecoZ = True
+            goodreco = True
 
-        self.h_lep0pt.Fill(lep0.Perp())
-        self.h_lep0eta.Fill(lep0.Eta())
-        self.h_lep0phi.Fill(lep0.Phi())
+        if goodrecolep and goodrecoZ :
+            self.h_lep0pt.Fill(lep0.Perp())
+            self.h_lep0eta.Fill(lep0.Eta())
+            self.h_lep0phi.Fill(lep0.Phi())
 
-        self.h_lep1pt.Fill(lep1.Perp())
-        self.h_lep1eta.Fill(lep1.Eta())
-        self.h_lep1phi.Fill(lep1.Phi())
+            self.h_lep1pt.Fill(lep1.Perp())
+            self.h_lep1eta.Fill(lep1.Eta())
+            self.h_lep1phi.Fill(lep1.Phi())
 
-        self.h_zpt.Fill( Zcand.Perp() )
-        self.h_zmass.Fill( Zcand.M() )
-        self.h_zeta.Fill( Zcand.Eta() )
-        self.h_zphi.Fill( Zcand.Phi() )
-        self.out.fillBranch("Zlep_isMu",  Zismu)
+            self.h_zpt.Fill( Zcand.Perp() )
+            self.h_zmass.Fill( Zcand.M() )
+            self.h_zeta.Fill( Zcand.Eta() )
+            self.h_zphi.Fill( Zcand.Phi() )
+            self.out.fillBranch("Zlep_isMu",  Zismu)
      
 
         if self.verbose:
@@ -324,35 +340,39 @@ class ZPlusJetsXS_2D(Module):
             print '----'
             print 'all recojets:'
             self.printCollection( allrecojets )
-        recojets = [ x for x in allrecojets if x.p4().Perp() > self.minJetPt and x.p4().DeltaPhi( Zcand ) > self.minDPhiZJet and abs(x.p4().Eta()) < self.maxObjEta ]
-        recojets.sort(key=lambda x:x.p4().Perp(),reverse=True)     
-        if len(recojets) < 1 : return False
-        #print "Event passed selection"
+        if goodreco :
+            recojets = [ x for x in allrecojets if x.p4().Perp() > self.minJetPt and x.p4().DeltaPhi( Zcand ) > self.minDPhiZJet and abs(x.p4().Eta()) < self.maxObjEta ]
+            recojets.sort(key=lambda x:x.p4().Perp(),reverse=True)     
+            if len(recojets) < 1 : goodreco = False
+        else : recojets = [None]
+   
+       
         if isMC == False :
             genjets = [None]*len(recojets) 
         # List of reco subjets:
         recosubjets = list(Collection(event,"SubJet"))
         # Dictionary to hold reco--> gen matching
-        #recoToGen =  None
-        if goodgen :
+        recoToGen =  None
+        if goodgen and goodreco :
             recoToGen = matchObjectCollection( recojets, genjets, dRmax=0.05 )
         # Dictionary to hold ungroomed-->groomed for reco
         recojetsGroomed = {}        
         # Get the groomed reco jets
-        for ireco,reco in enumerate(recojets):
-            if reco.subJetIdx1 >= 0 and reco.subJetIdx2 >= 0 :
-                recojetsGroomed[reco] = recosubjets[reco.subJetIdx1].p4() + recosubjets[reco.subJetIdx2].p4()
-            elif reco.subJetIdx1 >= 0 :
-                recojetsGroomed[reco] = recosubjets[reco.subJetIdx1].p4()
-            else :
-                recojetsGroomed[reco] = None
+        if goodreco :
+            for ireco,reco in enumerate(recojets):
+                if reco.subJetIdx1 >= 0 and reco.subJetIdx2 >= 0 :
+                    recojetsGroomed[reco] = recosubjets[reco.subJetIdx1].p4() + recosubjets[reco.subJetIdx2].p4()
+                elif reco.subJetIdx1 >= 0 :
+                    recojetsGroomed[reco] = recosubjets[reco.subJetIdx1].p4()
+                else :
+                    recojetsGroomed[reco] = None
 
-        if self.verbose:
-            print '----'
-            print 'opposite-Z recojets:'
-            for recojet in recojets:
-                sdmassreco = recojetsGroomed[recojet].M() if recojet in recojetsGroomed and recojetsGroomed[recojet] != None else -1.
-                print '         : %s %6.2f' % ( self.printP4( recojet),  sdmassreco )      
+            if self.verbose:
+                print '----'
+                print 'opposite-Z recojets:'
+                for recojet in recojets:
+                    sdmassreco = recojetsGroomed[recojet].M() if recojet in recojetsGroomed and recojetsGroomed[recojet] != None else -1.
+                    print '         : %s %6.2f' % ( self.printP4( recojet),  sdmassreco )      
 
                 
         # Loop over the reco,gen pairs.
@@ -360,132 +380,195 @@ class ZPlusJetsXS_2D(Module):
         # If both reco+gen: "fill"
         # If only reco: "fake"- still fill reco hists
         # (See below for "misses")
-        print "filling Ungroomed histos---------"
-        if not goodgen or len(genjets) < 1 : print "not goodgen or len(genjets) < 1"
-        if not goodgen or len(genjets) < 1 :
-            print "filling Ungroomed histos- RECO"
+        fake = False
+        fill = False
+        miss = False
+        #if event has neither goodgen or goodreco we do not want it 
+        if not goodgen and not goodreco : 
+            return False
+        # reco but no gen is a fake
+        elif goodreco and not goodgen :
+            #print "filling Ungroomed histos---------"
+            #Fakes 
+            #print "filling Ungroomed histos- RECO"
+            #Always fill the reco when filling fakes bc in data you cannot distinguish                                                                                                                          
+            #1D
             self.h_reco_u.Fill( reco.p4().M() )
+            #2D
             binNumberRecou=self.detectorDistribution.GetGlobalBinNumber(reco.p4().Perp(), reco.p4().M() )
             self.h_reco_2d_u.Fill(binNumberRecou)
-         
-
-            # This is a fake if there are reco but no gen
-            # This in 1D Ungroomed Fake
-            #print "filling ungroomed fakes"
-            print "filling Ungroomed histos FAKE 0 "
+            fake = True
+            fill = True
+            #Use branches for groomed filling in later script
+            self.out.fillBranch("reco",  1)
+            self.out.fillBranch("fake",  1)
+            #fill the fakes 
+            # 1D                                                                                                                                                                         
+            #print "filling Ungroomed histos FAKE 0 "
             self.h_fake_u.Fill(recojets[0].p4().M())
-
-            #2D fake
+            #2D                                                                                                                                                                                              
             binNumberFake=self.backgroundDistribution.GetGlobalBinNumber( recojets[0].p4().Perp(), recojets[0].p4().M() )
-            self.h_fake_2d_u.Fill( binNumberFake )            
+            self.h_fake_2d_u.Fill( binNumberFake )
 
-            # 1D and 2D  Groomed Fake
-            if recojetsGroomed[ recojets[0] ] != None : 
-                self.h_reco_u.Fill( recojetsGroomed[recojets[0]].M()  )
+            # 1D and 2D  Groomed Fake                                                                                                                                                                           
+            if recojetsGroomed[ recojets[0] ] != None :
+                self.h_reco.Fill( recojetsGroomed[recojets[0]].M()  )
                 self.h_fake.Fill(recojetsGroomed[recojets[0]].M() )
                 binNumberFakeg=self.backgroundDistribution.GetGlobalBinNumber( recojets[0].p4().Perp(), recojetsGroomed[recojets[0]].M()  )
                 self.h_fake_2d.Fill( binNumberFakeg )
             return True
-        #print recoToGen
-        for reco,gen in recoToGen.iteritems():
-            recoSD = recojetsGroomed[reco]
-            if reco == None :
-                continue
-            # Always fill the ungroomed det    
-            #print "filling recojet kinematics"
-            print "filling Ungroomed histos- RECO"
-            self.h_reco_u.Fill( reco.p4().M() )    
-            self.h_recojetpt.Fill(   reco.p4().Perp() )
-            self.h_recojeteta.Fill(  reco.p4().Eta()  )
-            self.h_recojetphi.Fill(  reco.p4().Phi()  )
-            self.h_recojetmass.Fill( reco.p4().M()  )
-           
-            #2D UnGroomed                                               
-                                                                                                         
-            binNumberRecou=self.detectorDistribution.GetGlobalBinNumber(reco.p4().Perp(), reco.p4().M() )
-            self.h_reco_2d_u.Fill(binNumberRecou)
-            if recoSD != None :
-
-                # Fill the groomed det if available 
-                #1D Groomed
-                self.h_reco.Fill( recoSD.M() )
-                #2D Groomed
-                binNumberReco=self.detectorDistribution.GetGlobalBinNumber(reco.p4().Perp(), recoSD.M() )
-                self.h_reco_2d.Fill(binNumberReco)
-            # Now check ungroomed gen
-            genSDVal = None
-            if gen != None:
-                # 1d Ungroomed
-                print "filling Ungroomed histos - GEN and RESPONSE"
-                self.h_response_u.Fill( reco.p4().M(), gen.p4().M() )
-                self.h_gen_u.Fill( gen.p4().M() )
-                # 2d Ungroomed
-                binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )                 
-                self.h_gen_2d_u.Fill( binNumberGenu )
-                self.h_response_2d_u.Fill( binNumberRecou, binNumberGenu )
-                    
-
-                self.h_drGenReco.Fill( reco.p4().DeltaR(gen.p4() ))
-                self.h_genjetpt.Fill( gen.p4().Perp() )                      
-                self.h_genjeteta.Fill( gen.p4().Eta() )
-                self.h_genjetphi.Fill( gen.p4().Phi() )
-                self.h_genjetmass.Fill( gen.p4().M()  )
-                genSD = genjetsGroomed[gen]
-                if recoSD != None and genSD != None:                   
-                    binNumberGen=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), genSD.M() )  
-                    self.h_gen_2d.Fill( binNumberGen )     
-                    self.h_response_2d.Fill( binNumberReco, binNumberGen )
-                    genSDVal = genSD.M()                     
-                    if self.verbose : 
-                        print ' reco: %s %8.4f, gen : %s %8.4f ' % (
-                            self.printP4(reco), recoSD.M(), 
-                            self.printP4(gen), genSD.M() )
-
-            else :
-                print "filling Ungroomed histos FAKE 1"
-                self.h_fake_u.Fill(reco.p4().M())
-                binNumberBkgu=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), reco.p4().M() )
-                self.h_fake_2d_u.Fill( binNumberBkgu )
-                # Here we have a groomed det, but no groomed gen. Groomed fake. 
-                if genSDVal == None and recoSD != None :
-                    self.h_fake.Fill(recoSD.M())
-                    binNumberBkg=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), recoSD.M() )
-                    #self.h_gen_2d.Fill( binNumberBkg ) Seems wrong ???
-                    self.h_fake_2d.Fill( binNumberBkg )
-        # Now loop over gen jets. If not in reco-->gen list,
-        # then we have a "miss"
-        for igen,gen in enumerate(genjets):
-            if gen != None and gen not in recoToGen.values() :
-                genSD = genjetsGroomed[gen]
-              
-                print "filling Ungroomed histos- GEN and MISS and RESPONSE"
-                # Ungroomed miss: 
-                self.h_response_u.Fill( -1.0, gen.p4().M() )
-                self.h_gen_u.Fill(gen.p4().M())
-                self.h_miss_u.Fill(gen.p4().M())
-                
-                # 2D                                                                                                                                                               
-                binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )
-                self.h_response_2d_u.Fill( 0, binNumberGenu )
-                self.h_gen_2d_u.Fill( binNumberGenu )
-                self.h_miss_2d_u.Fill( binNumberGenu )
-                # Groomed miss: check if there is a groomed gen.
-                # If there isn't, it gets skipped. 
-                if genSD == None :
+        elif goodreco and goodgen :
+            #print "filling Ungroomed histos---------"
+            for reco,gen in recoToGen.iteritems():
+                recoSD = recojetsGroomed[reco]
+                if reco == None :
+                    print "MISSES MISSING?"
                     continue
-                # 1D 
-                self.h_response.Fill( -1.0, genSD.M() )
-                self.h_gen.Fill( genSD.M() )
-                self.h_miss.Fill( genSD.M() )
+                 
+                fill = True
+                # Always fill the ungroomed det    
+                #print "filling recojet kinematics"
+                #print "filling Ungroomed histos- RECO"
+                self.h_reco_u.Fill( reco.p4().M() )    
+                self.h_recojetpt.Fill(   reco.p4().Perp() )
+                self.h_recojeteta.Fill(  reco.p4().Eta()  )
+                self.h_recojetphi.Fill(  reco.p4().Phi()  )
+                self.h_recojetmass.Fill( reco.p4().M()  )
+           
+                #2D UnGroomed                                               
+                                                                                                         
+                binNumberRecou=self.detectorDistribution.GetGlobalBinNumber(reco.p4().Perp(), reco.p4().M() )
+                self.h_reco_2d_u.Fill(binNumberRecou)
+                if recoSD != None :
+
+                    # Fill the groomed det if available 
+                    #1D Groomed
+                    self.h_reco.Fill( recoSD.M() )
+                    #2D Groomed
+                    binNumberReco=self.detectorDistribution.GetGlobalBinNumber(reco.p4().Perp(), recoSD.M() )
+                    self.h_reco_2d.Fill(binNumberReco)
+                # Now check ungroomed gen
+                genSDVal = None
+                if gen != None:
+                    # 1d Ungroomed
+                    #print "filling Ungroomed histos - GEN and RESPONSE"
+                    self.h_response_u.Fill( reco.p4().M(), gen.p4().M() )
+                    self.h_gen_u.Fill( gen.p4().M() )
+                    # 2d Ungroomed
+                    binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )                 
+                    self.h_gen_2d_u.Fill( binNumberGenu )
+                    self.h_response_2d_u.Fill( binNumberRecou, binNumberGenu )
+                    
+                    self.h_drGenReco.Fill( reco.p4().DeltaR(gen.p4() ))
+                    self.h_genjetpt.Fill( gen.p4().Perp() )                      
+                    self.h_genjeteta.Fill( gen.p4().Eta() )
+                    self.h_genjetphi.Fill( gen.p4().Phi() )
+                    self.h_genjetmass.Fill( gen.p4().M()  )
+                    genSD = genjetsGroomed[gen]
+                    if recoSD != None and genSD != None:                   
+                        binNumberGen=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), genSD.M() )  
+                        self.h_gen_2d.Fill( binNumberGen )     
+                        self.h_response_2d.Fill( binNumberReco, binNumberGen )
+                        genSDVal = genSD.M()                     
+                        if self.verbose : 
+                            print ' reco: %s %8.4f, gen : %s %8.4f ' % (
+                                self.printP4(reco), recoSD.M(), 
+                                self.printP4(gen), genSD.M() )
+
+                else :
+                    fake = True
+                    fill = True
+                    #print "filling Ungroomed histos FAKE 1"
+                    self.h_fake_u.Fill(reco.p4().M())
+                    binNumberBkgu=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), reco.p4().M() )
+                    self.h_fake_2d_u.Fill( binNumberBkgu )
+                    # Here we have a groomed det, but no groomed gen. Groomed fake. 
+                    if genSDVal == None and recoSD != None :
+                        self.h_fake.Fill(recoSD.M())
+                        binNumberBkg=self.backgroundDistribution.GetGlobalBinNumber( reco.p4().Perp(), recoSD.M() )
+                        #self.h_gen_2d.Fill( binNumberBkg ) Seems wrong ???
+                        self.h_fake_2d.Fill( binNumberBkg )
+
+
+
+            # Now loop over gen jets. If not in reco-->gen list,
+            # then we have a "miss"
+            for igen,gen in enumerate(genjets):
+                if gen != None and gen not in recoToGen.values() :
+                    genSD = genjetsGroomed[gen]
+                    miss = True
+                    #print "filling Ungroomed histos- GEN and MISS and RESPONSE"
+                    # Ungroomed miss: 
+                    self.h_response_u.Fill( -1.0, gen.p4().M() )
+                    self.h_gen_u.Fill(gen.p4().M())
+                    self.h_miss_u.Fill(gen.p4().M())
+                
+                    # 2D                                                                                                                                                               
+                    binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )
+                    self.h_response_2d_u.Fill( 0, binNumberGenu )
+                    self.h_gen_2d_u.Fill( binNumberGenu )
+                    self.h_miss_2d_u.Fill( binNumberGenu )
+                    # Groomed miss: check if there is a groomed gen.
+                    # If there isn't, it gets skipped.
+                    self.out.fillBranch("miss",  1) 
+                    self.out.fillBranch("gen",  1)
+                    self.out.fillBranch("response",  -1)
+                    if genSD == None :
+                        continue
+                    # 1D 
+                    self.h_response.Fill( -1.0, genSD.M() )
+                    self.h_gen.Fill( genSD.M() )
+                    self.h_miss.Fill( genSD.M() )
               
-                # 2D
-                binNumberGen=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), genSD.M() )
-                self.h_response_2d.Fill( 0, binNumberGen )
-                self.h_gen_2d.Fill( binNumberGen )
-                self.h_miss_2d.Fill( binNumberGen )
+                    # 2D
+                    binNumberGen=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), genSD.M() )
+                    self.h_response_2d.Fill( 0, binNumberGen )
+                    self.h_gen_2d.Fill( binNumberGen )
+                    self.h_miss_2d.Fill( binNumberGen )
+            return True
 
+        elif not goodreco and goodgen :
 
-        return True
+            if genjets[0] == None: return False
+            #print "filling Ungroomed histos---------"
+            gen = genjets[0]
+
+            genSD = genjetsGroomed[gen]
+            miss = True
+            #print "filling Ungroomed histos- GEN and MISS and RESPONSE"
+            # Ungroomed miss:                                                                                                                                                                            
+            self.h_response_u.Fill( -1.0, gen.p4().M() )
+            self.h_gen_u.Fill(gen.p4().M())
+            self.h_miss_u.Fill(gen.p4().M())
+
+            # 2D                                                                                                                                                                                         
+            binNumberGenu=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), gen.p4().M() )
+            self.h_response_2d_u.Fill( 0, binNumberGenu )
+            self.h_gen_2d_u.Fill( binNumberGenu )
+            self.h_miss_2d_u.Fill( binNumberGenu )
+            # Groomed miss: check if there is a groomed gen.                                                                                                                                             
+            # If there isn't, it gets skipped.                                                                                                                                                           
+            self.out.fillBranch("miss",  1)
+            self.out.fillBranch("gen",  1)
+            self.out.fillBranch("response",  -1)
+            
+            if genSD == None : return True
+            #continue
+            # 1D                                                                                                                                                                                         
+            self.h_response.Fill( -1.0, genSD.M() )
+            self.h_gen.Fill( genSD.M() )
+            self.h_miss.Fill( genSD.M() )
+            # 2D                                                                                                                                                                                         
+            binNumberGen=self.generatorDistribution.GetGlobalBinNumber(gen.p4().Perp(), genSD.M() )
+            self.h_response_2d.Fill( 0, binNumberGen )
+            self.h_gen_2d.Fill( binNumberGen )
+            self.h_miss_2d.Fill( binNumberGen )            
+            return True
+
+        if fake or miss or fill : return True
+        else : 
+            print "ERROR ? "
+            return False
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
 
 zplusjetsxs = lambda : ZPlusJetsXS_2D() 
