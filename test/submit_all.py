@@ -62,8 +62,9 @@ def main():
 
     config.section_("Data")
     config.Data.inputDataset = None
-    config.Data.splitting = ''
-    config.Data.unitsPerJob = 1
+    #config.Data.splitting = ''
+    
+    #config.Data.unitsPerJob = 1
     #config.Data.ignoreLocality = False                                                                                                                                                               
     config.Data.publication = True
     config.Data.publishDBS = 'phys03'
@@ -94,26 +95,57 @@ def main():
         s = ijob.rstrip()
         jobs.append( s )
         print '  --> added ' + s
-
+    dataset = None
     for ijob, job in enumerate(jobs) :
 
         ptbin = job.split('/')[1]
         cond = job.split('/')[2]
         datatier = job.split('/')[3]
         config.Data.inputDataset = job
-
+        #dataset = job 
         if datatier == "USER":
-            requestname = 'ZplusJetSelection_NANAODrecluster_' + ptbin + '_' + cond
-            config.JobType.scriptExe = 'crab_script.sh' 
-            config.JobType.inputFiles = [options.cfg ,'crab_script.sh', 'crab_script.py' ,'./haddnano.py', 'keep_and_drop.txt','/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PromptReco/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'] #hadd nano will not be needed once nano tools are in cmssw                                                                                      
-            config.JobType.sendPythonFolder  = True
-    
-            config.Data.inputDataset = job
             config.Data.inputDBS = 'phys03'
+            requestname = 'ZplusJetSkim_80XNANAODrecluster' + ptbin + '_' + cond
+            config.JobType.scriptExe = 'crab_script.sh' 
+            config.JobType.inputFiles = [options.cfg ,'crab_script.sh', 'crab_script.py' ,'./haddnano.py', 'keep_and_drop.txt','Cert_271036-284044_13TeV_PromptReco_Collisions16_JSON.txt'] #hadd nano will not be needed once nano tools are in cmssw                                                                                      
+            config.JobType.sendPythonFolder  = True
+            ''' 
+            # For useriputfiles use submit_all_uif.py        
+            # this will use CRAB client API
+            from CRABAPI.RawCommand import crabCommand
+
+            # talk to DBS to get list of files in this dataset
+            from dbs.apis.dbsClient import DbsApi
+            dbs = DbsApi('https://cmsweb.cern.ch/dbs/prod/global/DBSReader')
+
+            
+            fileDictList=dbs.listFiles(dataset=dataset)
+
+            print ("dataset %s has %d files" % (dataset, len(fileDictList)))
+
+            # DBS client returns a list of dictionaries, but we want a list of Logical File Names
+            lfnList = [ dic['logical_file_name'] for dic in fileDictList ]
+            # following 3 lines are the trick to skip DBS data lookup in CRAB Server
+            config.Data.userInputFiles = lfnList
             config.Data.splitting = 'FileBased'
-            config.Data.unitsPerJob = 1          
+            config.Data.unitsPerJob = 1
+
+            #config.Data.inputDataset = job
+            #config.Data.inputDBS = 'phys03'
+            #config.Data.splitting = 'FileBased'
+            #config.Data.unitsPerJob = 1
+            #config.Data.splitting = 'Automatic'#'EventAwareLumiBased'
+            #config.Data.unitsPerJob = 100
+            #config.Data.totalUnits = 2000
+            '''
+            #config.Data.splitting = 'Automatic' 
+            config.Data.splitting = 'LumiBased'
+            config.Data.lumiMask = options.lumiMask
+            config.Data.unitsPerJob = 200
             config.Data.publication = True
-            config.JobType.outputFiles = [ '94XNanoV0-DYtoLL-histos.root', '94XNanoV0-DYtoLL-nanoTrees.root']
+            #ONLY true for submit_all_uif.py since the input will have no metadata information, output can not be put in DBS        
+            #config.Data.publication = False#True
+            config.JobType.outputFiles = [ '80XNanoV0-DYtoLL-histos.root', '80XNanoV0-DYtoLL-nanoTrees.root']
         if datatier == 'MINIAODSIM':
             requestname = 'NANAODrecluster_' + ptbin + '_' + cond
             config.Data.splitting = 'FileBased'

@@ -13,7 +13,7 @@ from PhysicsTools.NanoAODJMAR.ZPlusJetsXS_2D import *
 # to the PostProcessor arguement below
 
 
-p1=PostProcessor(".",inputFiles() ,"Jet_pt>120 ","keep_and_drop.txt",[ZPlusJetsXS_2D()],provenance=True,fwkJobReport=True,histFileName='94XNanoV0-DYtoLL-histos.root'  , histDirName='zjets'  , haddFileName =  '94XNanoV0-DYtoLL-nanoTrees.root')
+p1=PostProcessor(".",inputFiles() ,"Jet_pt>200 ","keep_and_drop.txt",[ZPlusJetsXS_2D()],provenance=True,fwkJobReport=True,histFileName='80XNanoV0-DYtoLL-histos.root'  , histDirName='zjets'  , haddFileName =  '80XNanoV0-DYtoLL-nanoTrees.root', jsonInput='Cert_271036-284044_13TeV_PromptReco_Collisions16_JSON.txt')
 
 
 p1.run()
