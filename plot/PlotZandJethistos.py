@@ -123,7 +123,7 @@ for k1 in dirList:
 w = 1.
 if not options.MC :
     xsec = 3. * 2008.4
-    nevents = ( 244876.)# ext2 DY Nevents processed    #(32553254. + 11623646.)
+    nevents = 11623646.   # ( 244876.)# ext2 DY Nevents processed    #(32553254. + 11623646.)
     w = xsec * lumi / nevents
 
 
