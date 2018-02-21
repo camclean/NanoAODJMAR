@@ -10,15 +10,15 @@ from PhysicsTools.NanoAODTools.plotter import *
 
 parser = OptionParser()
 
-parser.add_option('--MC',dest="MC", default=True, action="store_true", help="Only plot the MC")
+parser.add_option('--MC',dest="MC", default=False, action="store_true", help="Only plot the MC")
 
 (options, args) = parser.parse_args()
 
 
 if not options.MC :
-    lumi = 4008.37 
+    lumi = 5434.766# need to check CRAB report lumis but this should be close   #4008.37 
 
-    dataFile = ROOT.TFile("./")
+    dataFile = ROOT.TFile.Open("root://cmsxrootd.fnal.gov///store/user/asparker/NANOSkimsof80Xrecluster/ZplusJetSkim80XNANAODreclusterSingleMuon2016B-histos.root")
 
     dataFile.cd()
 
@@ -36,10 +36,13 @@ if not options.MC :
       for h in hList:
         print "hist name is "
         print h.ReadObj().GetName()
-        dhists[h.GetName()] = h
+        if 'inning' in h.ReadObj().GetName() : continue
+        if '_2d' in h.ReadObj().GetName() : continue
+        if 'response' in h.ReadObj().GetName() : continue
+        dhists[h.GetName()] = [h.ReadObj()]
 
 
-mcFile = ROOT.TFile("./ZandJetSkimofNANAODreclusterDY1JetsToLLM-50-histos-all.root")
+mcFile = ROOT.TFile.Open("root://cmsxrootd.fnal.gov///store/user/asparker/NANOSkimsof80Xrecluster/ZandJetSkimof80XNANAODreclusterDY1JetsToLLM-50-histos-ext2.root")
 
 #get histos to plot
 mhists = {}
@@ -108,6 +111,9 @@ for k1 in dirList:
     #if 'fake' in hname : continue
     print "hist name is "
     print hname
+    if 'inning' in hname : continue
+    if '_2d' in h.ReadObj().GetName() : continue
+    if 'response' in h.ReadObj().GetName() : continue
     for t in titles :
         if t[0] in hname :
             title = t[1]
@@ -117,7 +123,7 @@ for k1 in dirList:
 w = 1.
 if not options.MC :
     xsec = 3. * 2008.4
-    nevents =  (32553254. + 11623646.)
+    nevents = ( 244876.)# ext2 DY Nevents processed    #(32553254. + 11623646.)
     w = xsec * lumi / nevents
 
 
@@ -128,11 +134,14 @@ rangexs = []
 cans = []
 if not options.MC :
     for name, hist in dhists.iteritems() :
-        # get MC hist
-        mc = mhists[name]
+        # get the hists
+        data = hist[0] 
+        mcl = mhists[name]
+        mc = mcl[0]
+        xtitle = mcl[1]
         #Apply scaling calculated above
         mc.Scale(w)
-        #mc.SetFillColor(3)#ROOT.kGreen +1)
+        mc.SetFillColor(ROOT.kGreen +1)
          
         # create the MC stack for the plot
         Stack = ROOT.THStack("mcStack"+ name, "mcStack"+ name )
@@ -140,15 +149,15 @@ if not options.MC :
         
         # rebin thse hists which need it
         rbnum = -1
-
-        if rbnum > 0. :
-            print "rebinning!!! {}".format(int(rbnum))
-            mc.Rebin(int(rbnum))
-            data.Rebin(int(rbnum))
+        rangexs = None
+        #if rbnum > 0. :
+        #    print "rebinning!!! {}".format(int(rbnum))
+        #    mc.Rebin(int(rbnum))
+        #    data.Rebin(int(rbnum))
       
-        therange = rangexs[i] 
-        print "Now plotting histo {} name is {} rangex[i] is {}".format(i, name, therange)
-        newcan = printPlot("default", "plots", name ,therange, data , mc, Stack ) 
+        #therange = rangexs[i] 
+        #print "Now plotting histo {} name is {} rangex[i] is {}".format(i, name, therange)
+        newcan = printPlot("80XNANOreclusterSkim_SingleMuondata", "zjetsDYext2", xtitle, name ,rangexs, y_max_scale, data , lumi, mc, Stack )
         cans.append(newcan)
 
 if options.MC :
