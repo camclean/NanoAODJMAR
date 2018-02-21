@@ -100,12 +100,13 @@ def main():
 
         ptbin = job.split('/')[1]
         cond = job.split('/')[2]
+        era = cond.split('Run2016')[1]
         datatier = job.split('/')[3]
         config.Data.inputDataset = job
         #dataset = job 
         if datatier == "USER":
             config.Data.inputDBS = 'phys03'
-            requestname = 'ZplusJetSkim_80XNANAODrecluster' + ptbin + '_' + cond
+            requestname = 'ZSkim_2016Muondata' + era
             config.JobType.scriptExe = 'crab_script.sh' 
             config.JobType.inputFiles = [options.cfg ,'crab_script.sh', 'crab_script.py' ,'./haddnano.py', 'keep_and_drop.txt','Cert_271036-284044_13TeV_PromptReco_Collisions16_JSON.txt'] #hadd nano will not be needed once nano tools are in cmssw                                                                                      
             config.JobType.sendPythonFolder  = True
